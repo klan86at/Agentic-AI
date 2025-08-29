@@ -3,10 +3,10 @@ import JacChatbot from '@/components/JacChatbot';
 import AdminDashboard from '@/components/AdminDashboard';
 
 const Dashboard = () => {
-  const { user } = useAuth();
+  const { isAdmin } = useAuth();
 
-  // Show admin dashboard for admin users, regular chat for others
-  if (user?.role === 'admin') {
+  // Show admin dashboard for admin email, regular chat for others
+  if (isAdmin) {
     return <AdminDashboard />;
   }
 

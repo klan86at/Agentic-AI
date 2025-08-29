@@ -60,7 +60,7 @@ interface UserQuestion {
 }
 
 const AdminDashboard = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, isAdmin } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [userQuestions, setUserQuestions] = useState<UserQuestion[]>([]);
@@ -211,19 +211,19 @@ const AdminDashboard = () => {
       setLoading(false);
     };
 
-    if (user?.role === 'admin') {
+    if (isAdmin) {
       loadData();
     }
-  }, [user]);
+  }, [user, isAdmin]);
 
   // Separate useEffect to fetch user questions after sessions and users are loaded
   useEffect(() => {
-    if (sessions.length > 0 && users.length > 0 && user?.role === 'admin') {
+    if (sessions.length > 0 && users.length > 0 && isAdmin) {
       fetchUserQuestions();
     }
-  }, [sessions, users]);
+  }, [sessions, users, isAdmin]);
 
-  if (!user || user.role !== 'admin') {
+  if (!user || !isAdmin) {
     return (
       <Alert>
         <AlertDescription>

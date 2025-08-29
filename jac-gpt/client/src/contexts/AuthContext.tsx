@@ -28,6 +28,7 @@ interface AuthContextType {
   resetMessageCount: () => void;
   canSendMessage: boolean;
   maxFreeMessages: number;
+  checkIsAdmin: (email?: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -41,6 +42,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [messageCount, setMessageCount] = useState(0);
   const maxFreeMessages = 10;
+
+  // Helper function to check if an email is admin
+  const checkIsAdmin = (email?: string): boolean => {
+    const emailToCheck = email || user?.email;
+    return emailToCheck?.toLowerCase() === 'admin.jacgpt@jaseci.org';
+  };
 
   // For development/testing purposes - expose reset function globally
   useEffect(() => {
@@ -334,12 +341,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     logout,
     isLoading,
     isAuthenticated: !!user,
-    isAdmin: user?.role === 'admin',
+    isAdmin: user?.email?.toLowerCase() === 'admin.jacgpt@jaseci.org',
     messageCount,
     incrementMessageCount,
     resetMessageCount,
     canSendMessage: !!user || messageCount < maxFreeMessages,
     maxFreeMessages,
+    checkIsAdmin,
   };
 
   return (
