@@ -1,7 +1,8 @@
 import sys;
 import os;
 import requests;
-import from byllm.llm {Model}
+import json;
+import from openai {OpenAI}
 import from dotenv {load_dotenv}
 import from database {get_database}
 import from rag_engine {RagEngine}
@@ -12,7 +13,7 @@ with entry {
     load_dotenv(override=True);
 }
 
-glob llm = Model(model_name='gpt-4.1-mini', verbose=True, api_key=os.getenv("OPENAI_API_KEY"));
+glob openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"));
 glob rag_engine: RagEngine = RagEngine();
 
 
@@ -28,7 +29,7 @@ enum ChatType {
 }
 
 node Router {
-    def classify(message: str) -> ChatType by llm(method="Reason", temperature=0.2);
+    def classify(message: str) -> ChatType;
 }
 
 node Chat {
@@ -92,15 +93,105 @@ def refer_full_language_examples() -> str {
     }
 }
 
+"""Helper function to call OpenAI with tool support."""
+def call_openai_with_tools(messages: list[dict], tools: list = [], model: str = "gpt-4o-mini", temperature: float = 0.7, max_iterations: int = 3) -> str {
+    import from openai {OpenAI};
+    
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"));
+    current_messages = messages.copy();
+    
+    for iteration in range(max_iterations) {
+        # Prepare API call
+        if tools {
+            response = client.chat.completions.create(
+                model=model,
+                messages=current_messages,
+                tools=tools,
+                temperature=temperature
+            );
+        } else {
+            response = client.chat.completions.create(
+                model=model,
+                messages=current_messages,
+                temperature=temperature
+            );
+        }
+        
+        assistant_message = response.choices[0].message;
+        
+        # If no tool calls, return the content
+        if not assistant_message.tool_calls {
+            return assistant_message.content;
+        }
+        
+        # Add assistant message to history
+        current_messages.append({
+            "role": "assistant",
+            "content": assistant_message.content,
+            "tool_calls": [
+                {
+                    "id": tc.id,
+                    "type": tc.type,
+                    "function": {
+                        "name": tc.function.name,
+                        "arguments": tc.function.arguments
+                    }
+                }
+                for tc in assistant_message.tool_calls
+            ]
+        });
+        
+        # Execute tool calls
+        for tool_call in assistant_message.tool_calls {
+            function_name = tool_call.function.name;
+            function_args = json.loads(tool_call.function.arguments);
+            
+            # Execute the function
+            function_result = "";
+            if function_name == "search_docs" {
+                function_result = search_docs(**function_args);
+            } elif function_name == "refer_full_language_examples" {
+                function_result = refer_full_language_examples();
+            }
+            
+            # Add function result to messages
+            current_messages.append({
+                "role": "tool",
+                "tool_call_id": tool_call.id,
+                "content": str(function_result)
+            });
+        }
+    }
+    
+    # Final call without tools to get summary
+    final_response = client.chat.completions.create(
+        model=model,
+        messages=current_messages,
+        temperature=temperature
+    );
+    
+    return final_response.choices[0].message.content;
+}
+
+"""Helper function for simple OpenAI calls."""
+def call_openai_simple(messages: list[dict], model: str = "gpt-4o-mini", temperature: float = 0.7) -> str {
+    import from openai {OpenAI};
+    
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"));
+    
+    response = client.chat.completions.create(
+        model=model,
+        messages=messages,
+        temperature=temperature
+    );
+    
+    return response.choices[0].message.content;
+}
+
 node RagChat(Chat) {
     has chat_type: ChatType = ChatType.RAG;
 
-    def respond(message: str, chat_history: list[dict]) -> str by llm(
-        method="ReAct",
-        messages=chat_history,
-        max_react_iterations=3,
-        tools = [refer_full_language_examples, search_docs]
-    );
+    def respond(message: str, chat_history: list[dict]) -> str;
 
     can chat with infer entry;
 }
@@ -108,11 +199,7 @@ node RagChat(Chat) {
 node QAChat(Chat) {
     has chat_type: ChatType = ChatType.QA;
 
-    def respond(message: str, chat_history: list[dict]) -> str by llm(
-        method="ReAct",
-        messages=chat_history,
-        max_react_iterations=3
-    );
+    def respond(message: str, chat_history: list[dict]) -> str;
 
     can chat with infer entry;
 }
@@ -120,11 +207,7 @@ node QAChat(Chat) {
 node OffTopicChat(Chat) {
     has chat_type: ChatType = ChatType.OFF_TOPIC;
     
-    def respond(message: str, chat_history: list[dict]) -> str by llm(
-        method="Reason",
-        messages=chat_history,
-        temperature=0.3
-    );
+    def respond(message: str, chat_history: list[dict]) -> str;
 
     can chat with infer entry;
 }
@@ -275,13 +358,6 @@ walker get_session_messages_admin {
     can get_session_chat with `root entry;
 }
 
-# walker get_user_info {
-#     has email: str;
-#     has requester_email: str = "";
-
-#     can get_user_details with `root entry;
-# }
-
 # Documentation-related walkers
 walker get_documentation_urls {
     """Get all documentation URLs from sitemap.xml"""
@@ -341,30 +417,3 @@ walker get_documentation_urls {
         }
     }
 }
-
-# walker get_documentation_content {
-#     """Fetch documentation content from a given URL"""
-#     has url: str;
-    
-#     obj __specs__ {
-#         static has methods: list = ["post"];
-#         static has auth: bool = False;
-#     }
-
-#     can fetch_content with `root entry;
-# }
-
-# walker suggest_documentation {
-#     """Suggest relevant documentation based on chat message using enhanced AI with section-level granularity"""
-#     has message: str;
-#     has chat_history: list[dict] = [];
-    
-#     obj __specs__ {
-#         static has methods: list = ["post"];
-#         static has auth: bool = False;
-#     }
-
-#     can get_enhanced_suggestions with `root entry;
-# }
-
-
