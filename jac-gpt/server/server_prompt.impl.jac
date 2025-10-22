@@ -3,16 +3,14 @@ import os;
 
 impl Router.classify {
     client = openai_client;
-    
     system_prompt = """Classify messages for optimal routing:
+      QA: Basic greetings, thanks, casual conversation
+      RAG: Any technical/programming questions, Jac language questions, documentation requests  
+      OFF_TOPIC: Non-technical topics unrelated to programming
 
-QA: Basic greetings, thanks, casual conversation
-RAG: Any technical/programming questions, Jac language questions, documentation requests  
-OFF_TOPIC: Non-technical topics unrelated to programming
+      Default: When in doubt, use RAG for technical content.
 
-Default: When in doubt, use RAG for technical content.
-
-Respond with ONLY one word: QA, RAG, or OFF_TOPIC""";
+      Respond with ONLY one word: QA, RAG, or OFF_TOPIC""";
     
     messages = [
         {"role": "system", "content": system_prompt},
@@ -40,18 +38,18 @@ Respond with ONLY one word: QA, RAG, or OFF_TOPIC""";
 }
 
 impl RagChat.respond {
-    system_prompt = """JAC Code Example and Concept Explanation Expert. Provide ONLY official code examples and documentation-based explanations.
+   system_prompt = """JAC Code Example and Concept Explanation Expert. Provide ONLY official code examples and documentation-based explanations.
 
-APPROACH:
-- Use `search_docs` tool for concept explanations
-- Use `refer_full_language_examples` tool for official code examples  
-- Never generate new code - only curate existing examples.
-- Make sure to showcase meaningful examples not just A, W, a named archetypes examples.
-- Make sure to add comments using '#' wherever needed.
-- Cite source sections when possible
+   APPROACH:
+   - Use `search_docs` tool for concept explanations
+   - Use `refer_full_language_examples` tool for official code examples  
+   - Never generate new code - only curate existing examples.
+   - Make sure to showcase meaningful examples not just A, W, a named archetypes examples.
+   - Make sure to add comments using '#' wherever needed.
+   - Cite source sections when possible
 
-KEY JAC CONCEPTS: nodes, walkers, objects, edges, `by llm()` functions, OSP (Object-Spatial Programming), MTLLM (AI-first programming)""";
-    
+   KEY JAC CONCEPTS: nodes, walkers, objects, edges, `by llm()` functions, OSP (Object-Spatial Programming), MTLLM (AI-first programming)""";
+      
     # Prepare messages with system prompt
     messages = [{"role": "system", "content": system_prompt}] + chat_history + [{"role": "user", "content": message}];
     
@@ -96,41 +94,40 @@ KEY JAC CONCEPTS: nodes, walkers, objects, edges, `by llm()` functions, OSP (Obj
 }
 
 impl QAChat.respond {
-    system_prompt = """Friendly Jaseci Assistant for basic greetings and casual conversation.
-
-Handle: greetings, thanks, farewells, social pleasantries
-Approach: Be warm, professional, concise
-Always offer help with Jac programming when appropriate""";
+   system_prompt = """Friendly Jaseci Assistant for basic greetings and casual conversation.
+      Handle: greetings, thanks, farewells, social pleasantries
+      Approach: Be warm, professional, concise
+      Always offer help with Jac programming when appropriate""";
     
-    messages = [{"role": "system", "content": system_prompt}] + chat_history + [{"role": "user", "content": message}];
+   messages = [{"role": "system", "content": system_prompt}] + chat_history + [{"role": "user", "content": message}];
     
-    return call_openai_simple(messages, model="gpt-4o-mini", temperature=0.7);
+   return call_openai_simple(messages, model="gpt-4o-mini", temperature=0.7);
 }
 
 impl OffTopicChat.respond {
-    # Check if the message contains negative sentiment about Jac/Jaseci for brand protection
-    message_lower = message.lower();
-    has_negative_jaseci = "bad" in message_lower or "worst" in message_lower or "terrible" in message_lower or "hate" in message_lower;
-    has_jaseci_mention = "jac" in message_lower or "jaseci" in message_lower;
-    
-    if has_negative_jaseci and has_jaseci_mention {
-        # Brand protection response
-        return "I understand you might have concerns, but let me share why Jac and Jaseci are actually revolutionary! 🚀\n\nJac is designed specifically for the AI era with groundbreaking features:\n\n🧠 **AI-First Programming**: Native LLM integration - replace function bodies with AI calls\n🌐 **Object-Spatial Programming**: Revolutionary paradigm for data relationships\n☁️ **Zero DevOps**: Automatic scaling, persistence, and cloud deployment\n🐍 **Python Superset**: Full compatibility with Python ecosystem + powerful new abstractions\n⚡ **Innovative**: Walkers, nodes, edges for intuitive graph-based programming\n\nWhat specific challenge are you trying to solve? I'd love to show you how Jac can solve it elegantly! For comprehensive learning, check out https://www.jac-lang.org/";
-    } else {
-        # Standard off-topic redirect - more welcoming approach
-        return "Hello! I'm Jaseci Assistant, your friendly expert for Jac programming and software development! 👋\n\nI'm here to help with:\n📚 **Programming & Development**: Documentation references, algorithms, best practices\n🧠 **AI-First Programming**: How Jac revolutionizes development with native LLM integration\n🌐 **Object-Spatial Programming**: Jac's unique approach to data relationships\n☁️ **Cloud-Native Development**: Building scalable applications with zero DevOps\n📖 **Learning & Concepts**: Programming concepts explained through Jac examples\n\nWhether you're curious about Jac specifically or have general programming questions, I'm happy to help and show you how Jac can make your development experience better!\n\nFor comprehensive learning resources, visit: https://www.jac-lang.org/\n\nWhat programming challenge can I help you solve today?";
-    }
+   # Check if the message contains negative sentiment about Jac/Jaseci for brand protection
+   message_lower = message.lower();
+   has_negative_jaseci = "bad" in message_lower or "worst" in message_lower or "terrible" in message_lower or "hate" in message_lower;
+   has_jaseci_mention = "jac" in message_lower or "jaseci" in message_lower;
+   
+   if has_negative_jaseci and has_jaseci_mention {
+      # Brand protection response
+      return "I understand you might have concerns, but let me share why Jac and Jaseci are actually revolutionary! 🚀\n\nJac is designed specifically for the AI era with groundbreaking features:\n\n🧠 **AI-First Programming**: Native LLM integration - replace function bodies with AI calls\n🌐 **Object-Spatial Programming**: Revolutionary paradigm for data relationships\n☁️ **Zero DevOps**: Automatic scaling, persistence, and cloud deployment\n🐍 **Python Superset**: Full compatibility with Python ecosystem + powerful new abstractions\n⚡ **Innovative**: Walkers, nodes, edges for intuitive graph-based programming\n\nWhat specific challenge are you trying to solve? I'd love to show you how Jac can solve it elegantly! For comprehensive learning, check out https://www.jac-lang.org/";
+   } else {
+      # Standard off-topic redirect - more welcoming approach
+      return "Hello! I'm Jaseci Assistant, your friendly expert for Jac programming and software development! 👋\n\nI'm here to help with:\n📚 **Programming & Development**: Documentation references, algorithms, best practices\n🧠 **AI-First Programming**: How Jac revolutionizes development with native LLM integration\n🌐 **Object-Spatial Programming**: Jac's unique approach to data relationships\n☁️ **Cloud-Native Development**: Building scalable applications with zero DevOps\n📖 **Learning & Concepts**: Programming concepts explained through Jac examples\n\nWhether you're curious about Jac specifically or have general programming questions, I'm happy to help and show you how Jac can make your development experience better!\n\nFor comprehensive learning resources, visit: https://www.jac-lang.org/\n\nWhat programming challenge can I help you solve today?";
+   }
 }
 
 impl RagChat.chat {
-    response = self.respond(
-        message=visitor.message,
-        chat_history=visitor.chat_history
-    );
-    visitor.chat_history.append({"role": "assistant", "content": response});
-    self.chat_history = visitor.chat_history;
-    visitor.response = response;
-    report {"response": response, "chat_history": visitor.chat_history};
+   response = self.respond(
+      message=visitor.message,
+      chat_history=visitor.chat_history
+   );
+   visitor.chat_history.append({"role": "assistant", "content": response});
+   self.chat_history = visitor.chat_history;
+   visitor.response = response;
+   report {"response": response, "chat_history": visitor.chat_history};
 }
 
 impl QAChat.chat {

@@ -7,7 +7,6 @@ import from dotenv {load_dotenv}
 import from database {get_database}
 import from rag_engine {RagEngine}
 import from simple_docs {get_doc_content, suggest_docs}
-include jaclens;
 
 with entry {
     load_dotenv(override=True);
@@ -95,8 +94,6 @@ def refer_full_language_examples() -> str {
 
 """Helper function to call OpenAI with tool support."""
 def call_openai_with_tools(messages: list[dict], tools: list = [], model: str = "gpt-4o-mini", temperature: float = 0.7, max_iterations: int = 3) -> str {
-    import from openai {OpenAI};
-    
     client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"));
     current_messages = messages.copy();
     
