@@ -6,3 +6,6 @@ mydatabase
 .env
 *.json
 *.jsonl
+myenv
+env/
+myenv/
