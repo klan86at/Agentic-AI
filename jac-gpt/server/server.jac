@@ -6,7 +6,6 @@ import from dotenv {load_dotenv}
 import from database {get_database}
 import from rag_engine {RagEngine}
 import from simple_docs {get_doc_content, suggest_docs}
-include jaclens;
 
 with entry {
     load_dotenv(override=True);
