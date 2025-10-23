@@ -1,6 +1,6 @@
-import streamlit as st
+import streamlit as st # type:ignore
 import requests
-from streamlit.components.v1 import html as components_html
+from streamlit.components.v1 import html as components_html # type:ignore
 
 # --- PAGE CONFIG ---
 st.set_page_config(
